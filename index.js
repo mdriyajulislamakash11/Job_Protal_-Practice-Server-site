@@ -33,7 +33,7 @@ async function run() {
     // all Job Apis
     app.get("/jobs", async (req, res) => {
       const email = req.query.email;
-      const query = {}
+      let query = {}
       if(email) {
         query = {hr_email: email};
       }
@@ -50,7 +50,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/add-jobs", async (req, res) => {
+    app.post("/jobs", async (req, res) => {
       const newJob = req.body;
       const result = await jobCollections.insertOne(newJob);
       res.send(result)
