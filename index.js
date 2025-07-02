@@ -28,14 +28,16 @@ async function run() {
     await client.connect();
 
     const jobCollections = client.db("job_protal_DB").collection("jobs");
-    const jobApplicationsCollection = client.db("job_protal_DB").collection("job-Applications");
+    const jobApplicationsCollection = client
+      .db("job_protal_DB")
+      .collection("job-Applications");
 
     // all Job Apis
     app.get("/jobs", async (req, res) => {
       const email = req.query.email;
-      let query = {}
-      if(email) {
-        query = {hr_email: email};
+      let query = {};
+      if (email) {
+        query = { hr_email: email };
       }
 
       const cursor = jobCollections.find(query);
@@ -53,42 +55,38 @@ async function run() {
     app.post("/jobs", async (req, res) => {
       const newJob = req.body;
       const result = await jobCollections.insertOne(newJob);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
-
-    // Job Applications Apis: 
+    // Job Applications Apis:
 
     app.get("/job-application", async (req, res) => {
       const email = req.query.email;
-      const query = {applicant_email: email}
-      const result = await jobApplicationsCollection.find(query).toArray()
-      
+      const query = { applicant_email: email };
+      const result = await jobApplicationsCollection.find(query).toArray();
 
       // ekahne ami jobCollection theke kichu data job applicationCollection er moddhe pathabo
-      for(const application of result) {
-        const query1 = {_id: new ObjectId(application.job_id)}
+      for (const application of result) {
+        const query1 = { _id: new ObjectId(application.job_id) };
         const job = await jobCollections.findOne(query1);
 
-        // 
-        if(job){
+        //
+        if (job) {
           application.title = job.title;
-          application.company = job.company
+          application.company = job.company;
           application.company_logo = job.company_logo;
-          application.category= job.category;
+          application.category = job.category;
         }
       }
-      res.send(result)
+      res.send(result);
     });
-
 
     app.get("/job-applications/jobs/:job_id", async (req, res) => {
       const jobId = req.params.job_id;
-      const query = {job_id: jobId}
-      const result = await jobApplicationsCollection.find(query).toArray()
-      res.send(result)
-
-    })
+      const query = { job_id: jobId };
+      const result = await jobApplicationsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     app.post("/job-applications", async (req, res) => {
       const application = req.body;
@@ -96,32 +94,39 @@ async function run() {
 
       // application count er kaj
       const id = application.job_id;
-      const query = {_id: new ObjectId(id)};
-      const job = await jobCollections.findOne(query)
+      const query = { _id: new ObjectId(id) };
+      const job = await jobCollections.findOne(query);
 
       let newCount = 0;
-      if(job.applicationCount){
+      if (job.applicationCount) {
         newCount = job.applicationCount + 1;
-      }else{
+      } else {
         newCount = 1;
-      };
+      }
 
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const updateCount = {
         $set: {
           applicationCount: newCount,
+        },
+      };
+      const updatedResult = await jobCollections.updateOne(filter, updateCount);
+      res.send(result);
+    });
+
+
+    app.patch("/job-applications/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const data = req.body;
+      const updatedDoc = {
+        $set: {
+          status: data.status
         }
       }
-      const updatedResult = await jobCollections.updateOne(filter, updateCount)
-
-
+      const result = await jobApplicationsCollection.updateOne(query, updatedDoc);
       res.send(result)
     })
-
-
-
-
-
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
