@@ -28,6 +28,7 @@ async function run() {
     await client.connect();
 
     const jobCollections = client.db("job_protal_DB").collection("jobs");
+    const jobApplicationsCollection = client.db("job_protal_DB").collection("job-Applications");
 
     // all Job Apis
     app.get("/jobs", async (req, res) => {
@@ -42,6 +43,45 @@ async function run() {
       const result = await jobCollections.findOne(query);
       res.send(result);
     });
+
+
+    // Job Applications Apis: 
+    app.get("/job-application", async (req, res) => {
+      const email = req.query.email;
+      const query = {applicant_email: email}
+      const result = await jobApplicationsCollection.find(query).toArray()
+      
+
+      // ekahne ami jobCollection theke kichu data job applicationCollection er moddhe pathabo
+      for(const application of result) {
+        const query1 = {_id: new ObjectId(application.job_id)}
+        const job = await jobCollections.findOne(query1);
+
+        // 
+        if(job){
+          application.title = job.title;
+          application.company = job.company
+          application.company_logo = job.company_logo;
+          application.category= job.category;
+        }
+      }
+
+
+
+
+      res.send(result)
+    })
+
+    app.post("/job-applications", async (req, res) => {
+      const application = req.body;
+      const result = await jobApplicationsCollection.insertOne(application);
+      res.send(result)
+    })
+
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
