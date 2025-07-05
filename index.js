@@ -6,10 +6,12 @@ const port = process.env.PORT || 5000;
 const app = express();
 
 // midle ware
-app.use(cors({
-  origin: `http://localhost:5173`,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: `http://localhost:5173`,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // mongoDB server site Code:
@@ -45,8 +47,26 @@ async function run() {
           httpOnly: true,
           secure: false,
         })
-        .send({success: true});
+        .send({ success: true });
     });
+
+    // token Verify:
+    const varifyToke = (req, res, next) => {
+      const token = req.cookies?.token;
+
+      if (!token) {
+        return res.status(401).send({ message: "unAuthorize" });
+      }
+
+      jwi.verify(token, process.env.USER_SECRET_KEY, (error, deCode) => {
+        if (error) {
+          return res.status(401).send({ message: "unAuthorize" });
+        }
+
+        req.user = deCode;
+        next();
+      });
+    };
 
     // all Job Apis----------------------------------------------------> All JOB
     app.get("/jobs", async (req, res) => {
@@ -76,7 +96,7 @@ async function run() {
 
     // Job Applications Apis:
 
-    app.get("/job-application", async (req, res) => {
+    app.get("/job-application", varifyToke, async (req, res) => {
       const email = req.query.email;
       const query = { applicant_email: email };
       const result = await jobApplicationsCollection.find(query).toArray();
