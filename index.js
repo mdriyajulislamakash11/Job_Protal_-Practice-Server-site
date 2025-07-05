@@ -35,16 +35,16 @@ async function run() {
 
 
 
-    // JWT Authentication: 
+    // JWT Authentication: ------------------------------------>JWT
     app.post("/jwt", async(req, res) => {
       const user = req.body;
       const token = jwt.sign(user, 'secret', {expiresIn: "4h"})
       res.send(token)
-    })
+    });
 
 
 
-    // all Job Apis
+    // all Job Apis----------------------------------------------------> All JOB
     app.get("/jobs", async (req, res) => {
       const email = req.query.email;
       let query = {};
