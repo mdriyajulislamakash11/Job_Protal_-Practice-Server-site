@@ -2,24 +2,45 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const port = process.env.PORT || 5000;
+const cookieParser = require("cookie-parser");
 const app = express();
+const port = process.env.PORT || 5000;
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
-// midle ware
+// middleware
 app.use(
   cors({
-    origin: `http://localhost:5173`,
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
+app.use(cookieParser());
 app.use(express.json());
 
-// mongoDB server site Code:
+// Verify token middleware
+// token verify
+const varifyToken = (req, res, next) => {
+  console.log("inside verify token middleware"); // check korar jonno
+  const token = req?.cookies?.token; // token ta ekhan theke pabo
+  console.log(token);
+  if (!token) {
+    // varify kortese
+    return res.status(401).send({ message: "unAuthorized access" });
+  }
+  jwt.verify(token, process.env.USER_SECRET_KEY, (error, decoded) => {
+    // mukh kaj
 
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+    if (error) {
+      // arror asle error dibe
+      return res.status(401).send({ message: "unAuthorized access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+// mongoDB server side code
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zchez.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -30,7 +51,6 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
     const jobCollections = client.db("job_protal_DB").collection("jobs");
@@ -38,44 +58,39 @@ async function run() {
       .db("job_protal_DB")
       .collection("job-Applications");
 
-    // JWT Authentication: ------------------------------------>JWT
-    app.post("/jwt", async (req, res) => {
+    // JWT Authentication
+    app.post("/jwt", (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, "secret", { expiresIn: "4h" });
+      const token = jwt.sign(user, process.env.USER_SECRET_KEY, {
+        expiresIn: "4h",
+      });
       res
         .cookie("token", token, {
           httpOnly: true,
           secure: false,
+          sameSite: "lax",
         })
         .send({ success: true });
     });
 
-    // token Verify:
-    const varifyToke = (req, res, next) => {
-      const token = req.cookies?.token;
+    // JWT Logout
+    app.post("/logout", (req, res) => {
+      res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+        })
+        .send({ success: true });
+    });
 
-      if (!token) {
-        return res.status(401).send({ message: "unAuthorize" });
-      }
-
-      jwi.verify(token, process.env.USER_SECRET_KEY, (error, deCode) => {
-        if (error) {
-          return res.status(401).send({ message: "unAuthorize" });
-        }
-
-        req.user = deCode;
-        next();
-      });
-    };
-
-    // all Job Apis----------------------------------------------------> All JOB
+    // All Job APIs
     app.get("/jobs", async (req, res) => {
       const email = req.query.email;
       let query = {};
       if (email) {
         query = { hr_email: email };
       }
-
       const cursor = jobCollections.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -94,19 +109,18 @@ async function run() {
       res.send(result);
     });
 
-    // Job Applications Apis:
-
-    app.get("/job-application", varifyToke, async (req, res) => {
+    // Job Applications APIs
+    app.get("/job-application", varifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { applicant_email: email };
-      const result = await jobApplicationsCollection.find(query).toArray();
+      const applications = await jobApplicationsCollection
+        .find(query)
+        .toArray();
 
-      // ekahne ami jobCollection theke kichu data job applicationCollection er moddhe pathabo
-      for (const application of result) {
-        const query1 = { _id: new ObjectId(application.job_id) };
-        const job = await jobCollections.findOne(query1);
-
-        //
+      for (const application of applications) {
+        const job = await jobCollections.findOne({
+          _id: new ObjectId(application.job_id),
+        });
         if (job) {
           application.title = job.title;
           application.company = job.company;
@@ -114,7 +128,7 @@ async function run() {
           application.category = job.category;
         }
       }
-      res.send(result);
+      res.send(applications);
     });
 
     app.get("/job-applications/jobs/:job_id", async (req, res) => {
@@ -128,52 +142,41 @@ async function run() {
       const application = req.body;
       const result = await jobApplicationsCollection.insertOne(application);
 
-      // application count er kaj
-      const id = application.job_id;
-      const query = { _id: new ObjectId(id) };
-      const job = await jobCollections.findOne(query);
+      const jobId = application.job_id;
+      const job = await jobCollections.findOne({ _id: new ObjectId(jobId) });
 
       let newCount = 0;
-      if (job.applicationCount) {
+      if (job?.applicationCount) {
         newCount = job.applicationCount + 1;
       } else {
         newCount = 1;
       }
 
-      const filter = { _id: new ObjectId(id) };
-      const updateCount = {
-        $set: {
-          applicationCount: newCount,
-        },
-      };
-      const updatedResult = await jobCollections.updateOne(filter, updateCount);
+      await jobCollections.updateOne(
+        { _id: new ObjectId(jobId) },
+        { $set: { applicationCount: newCount } }
+      );
+
       res.send(result);
     });
 
     app.patch("/job-applications/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
       const data = req.body;
-      const updatedDoc = {
-        $set: {
-          status: data.status,
-        },
-      };
+      const updatedDoc = { $set: { status: data.status } };
       const result = await jobApplicationsCollection.updateOne(
-        query,
+        { _id: new ObjectId(id) },
         updatedDoc
       );
       res.send(result);
     });
 
-    // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    // do not close connection
   }
 }
 run().catch(console.dir);
@@ -183,5 +186,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Job Protal server site running on Port: ${port}`);
+  console.log(`Job Protal server running on port: ${port}`);
 });
