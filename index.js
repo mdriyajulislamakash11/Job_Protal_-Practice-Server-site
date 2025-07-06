@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Verify token middleware
 // token verify
-const varifyToken = (req, res, next) => {
+const varifyToken = (req, res, next) => {  // eta ekta middle ware verifyToken name
   console.log("inside verify token middleware"); // check korar jonno
   const token = req?.cookies?.token; // token ta ekhan theke pabo
   console.log(token);
