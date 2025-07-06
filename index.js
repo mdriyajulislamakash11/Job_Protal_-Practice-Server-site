@@ -23,7 +23,7 @@ const varifyToken = (req, res, next) => {  // eta ekta middle ware verifyToken n
   console.log("inside verify token middleware"); // check korar jonno
   const token = req?.cookies?.token; // token ta ekhan theke pabo
   console.log(token);
-  if (!token) {
+  if (!token) {  // jodi token na thake tahole retun kore dibe
     // varify kortese
     return res.status(401).send({ message: "unAuthorized access" });
   }
