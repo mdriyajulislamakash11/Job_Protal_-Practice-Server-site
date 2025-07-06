@@ -115,7 +115,7 @@ async function run() {
       const query = { applicant_email: email };
 
     if(req.user.email !== req.query.email){  // eije eta hocche khub importent kaj
-      return res.status(403).send({message: "forbidden"})
+      return res.status(403).send({message: "forbidden"})  // user er email ar query er email jodi thik na hoy tahole retun kore dibe
     };
 
 
