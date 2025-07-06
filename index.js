@@ -73,7 +73,7 @@ async function run() {
         .send({ success: true });
     });
 
-    // JWT Logout
+    // JWT Logout   || eta hocche jodi user log out hoy tahole token remove hoye jabe
     app.post("/logout", (req, res) => {
       res
         .clearCookie("token", {
