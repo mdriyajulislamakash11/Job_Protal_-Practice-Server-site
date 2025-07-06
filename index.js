@@ -66,7 +66,7 @@ async function run() {
       });
       res
         .cookie("token", token, {  // eta diye browser er cookie te token set kortese
-          httpOnly: true,
+          httpOnly: true,           // sudhu http only support korbe
           secure: false,
           sameSite: "lax",
         })
