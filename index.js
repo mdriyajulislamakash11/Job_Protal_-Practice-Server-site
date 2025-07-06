@@ -27,7 +27,7 @@ const varifyToken = (req, res, next) => {  // eta ekta middle ware verifyToken n
     // varify kortese
     return res.status(401).send({ message: "unAuthorized access" });
   }
-  jwt.verify(token, process.env.USER_SECRET_KEY, (error, decoded) => {
+  jwt.verify(token, process.env.USER_SECRET_KEY, (error, decoded) => { // jodi thake tahole varify kore nibe
     // mukh kaj
 
     if (error) {
