@@ -59,7 +59,7 @@ async function run() {
       .collection("job-Applications");
 
     // JWT Authentication || jwt sobar prothom etar kaj
-    app.post("/jwt", (req, res) => {
+    app.post("/jwt", (req, res) => {  // jwt token bananor kaj
       const user = req.body;
       const token = jwt.sign(user, process.env.USER_SECRET_KEY, {
         expiresIn: "4h",
