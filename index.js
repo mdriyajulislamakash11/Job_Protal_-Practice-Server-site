@@ -110,7 +110,7 @@ async function run() {
     });
 
     // Job Applications APIs
-    app.get("/job-application", varifyToken, async (req, res) => {
+    app.get("/job-application", varifyToken, async (req, res) => {  // eije ekhane verify token er mul kaj hocche
       const email = req.query.email;
       const query = { applicant_email: email };
 
