@@ -65,7 +65,7 @@ async function run() {
         expiresIn: "4h",
       });
       res
-        .cookie("token", token, {
+        .cookie("token", token, {  // eta diye browser er cookie te token set kortese
           httpOnly: true,
           secure: false,
           sameSite: "lax",
