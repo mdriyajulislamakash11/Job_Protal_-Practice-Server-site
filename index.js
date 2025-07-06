@@ -58,7 +58,7 @@ async function run() {
       .db("job_protal_DB")
       .collection("job-Applications");
 
-    // JWT Authentication || sobar prothom etar kaj
+    // JWT Authentication || jwt sobar prothom etar kaj
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.USER_SECRET_KEY, {
