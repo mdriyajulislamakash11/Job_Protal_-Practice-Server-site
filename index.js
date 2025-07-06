@@ -76,7 +76,7 @@ async function run() {
     // JWT Logout   || eta hocche jodi user log out hoy tahole token remove hoye
     app.post("/logout", (req, res) => {
       res
-        .clearCookie("token", {
+        .clearCookie("token", {  // eta diye token clear kortese cokkie theke remove kortese
           httpOnly: true,
           secure: false,
           sameSite: "lax",
