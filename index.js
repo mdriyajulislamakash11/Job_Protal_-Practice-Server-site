@@ -34,8 +34,8 @@ const varifyToken = (req, res, next) => {  // eta ekta middle ware verifyToken n
       // arror asle error dibe
       return res.status(401).send({ message: "unAuthorized access" });
     }
-    req.user = decoded;
-    next();
+    req.user = decoded;  // jodi na ase tahole eta ke decode kore dibe 
+    next(); 
   });
 };
 // mongoDB server side code
